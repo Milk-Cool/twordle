@@ -54,15 +54,20 @@ const outOfGuesses = (player: Player) => {
 const wss = new WebSocketServer({ server });
 wss.on("connection", ws => {
     ws.on("error", console.error);
-    ws.on("close", () => {
-        // TODO: handle disconnect
-        delete players[index];
-    });
 
     ws.send("299 Welcome to twordle");
 
     const player = generatePlayer(ws);
     const index = players.push(player) - 1;
+
+    ws.on("close", () => {
+        if(player.opponent !== null) {
+            players[player.opponent].ws.send("502 Opponent disconnected");
+            players[player.opponent].ws.close();
+            delete players[player.opponent];
+        }
+        delete players[index];
+    });
 
     let opponentIndex = players.findIndex((x, i) => x.opponent === null && i !== index);
     if(opponentIndex !== -1) {
