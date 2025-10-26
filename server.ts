@@ -38,31 +38,69 @@ const generatePlayer = (ws: WebSocket) => ({
     guesses: 0
 } as Player);
 
+const reduceRows = (player: Player) => {
+    player.rows--;
+    player.ws.send(`501 Rows reduced (${player.rows})`);
+    if(player.guesses < player.rows) return;
+    outOfGuesses(player);
+};
+const outOfGuesses = (player: Player) => {
+    player.ws.send("402 Out of guesses");
+    player.guesses = 0;
+    if(player.rows > 3) reduceRows(player);
+    player.word = randomWord();
+};
+
 const wss = new WebSocketServer({ server });
 wss.on("connection", ws => {
     ws.on("error", console.error);
-    ws.on("close", () => null);
+    ws.on("close", () => {
+        // TODO: handle disconnect
+        delete players[index];
+    });
+
+    ws.send("299 Welcome to twordle");
 
     const player = generatePlayer(ws);
-    players.push(player);
+    const index = players.push(player) - 1;
+
+    let opponentIndex = players.findIndex((x, i) => x.opponent === null && i !== index);
+    if(opponentIndex !== -1) {
+        player.opponent = opponentIndex;
+        players[opponentIndex].opponent = index;
+        ws.send("202 Opponent found");
+        players[opponentIndex].ws.send("202 Opponent found");
+    } else {
+        ws.send("201 Searching for opponent");
+        setTimeout(() => {
+            if(player.opponent !== null) return;
+            ws.send("500 Opponent not found");
+            ws.close();
+            delete players[index];
+        }, 20000);
+    }
 
     ws.on("message", data => {
         if(Array.isArray(data)) data = Buffer.concat(data);
         if(data instanceof ArrayBuffer) data = Buffer.from(data);
         const str = (data as Buffer).toString();
 
+        if(player.opponent === null) return ws.send("403 Opponent not found yet");
+
         if(str.length !== 5) return ws.send("400 Invalid word length");
         if(!words.includes(str)) return ws.send("401 Not a real word");
         player.guesses++;
-        ws.send("200 " + str.toUpperCase().split("").map((x, i) => {
+        const mask = str.toUpperCase().split("").map((x, i) => {
             if(x === player.word[i]) return "g";
             if(player.word.includes(x)) return "y";
             return "-";
-        }).join(""));
+        }).join("");
+        ws.send("200 " + mask);
+        if(mask === "ggggg") {
+            player.guesses = 0;
+            if(players[player.opponent].rows > 3) reduceRows(players[player.opponent]);
+        }
         if(player.guesses < player.rows) return;
-        ws.send("402 Out of guesses");
-        player.guesses = 0;
-        if(player.rows > 3) player.rows--;
-        player.word = randomWord();
+        outOfGuesses(player);
     });
 });
