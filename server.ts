@@ -27,6 +27,7 @@ type Player = {
     word: string;
     rows: number;
     guesses: number;
+    index: number;
 };
 const players: Player[] = [];
 
@@ -35,7 +36,8 @@ const generatePlayer = (ws: WebSocket) => ({
     opponent: null,
     word: randomWord(),
     rows: 6,
-    guesses: 0
+    guesses: 0,
+    index: -1
 } as Player);
 
 const reduceRows = (player: Player) => {
@@ -47,8 +49,18 @@ const reduceRows = (player: Player) => {
 const outOfGuesses = (player: Player) => {
     player.ws.send("402 Out of guesses");
     player.guesses = 0;
-    if(player.rows > 3) reduceRows(player);
+    if(player.rows <= 3) return gameOver(player);
+    reduceRows(player);
     player.word = randomWord();
+};
+const gameOver = (player: Player) => {
+    player.ws.send("404 Game over");
+    player.ws.close();
+    delete players[player.index];
+    if(player.opponent === null) return;
+    players[player.opponent].ws.send("203 You win");
+    players[player.opponent].ws.close();
+    delete players[player.opponent];
 };
 
 const wss = new WebSocketServer({ server });
@@ -59,6 +71,7 @@ wss.on("connection", ws => {
 
     const player = generatePlayer(ws);
     const index = players.push(player) - 1;
+    player.index = index; // for gameOver()
 
     ws.on("close", () => {
         if(player.opponent !== null) {
@@ -103,7 +116,8 @@ wss.on("connection", ws => {
         ws.send("200 " + mask);
         if(mask === "ggggg") {
             player.guesses = 0;
-            if(players[player.opponent].rows > 3) reduceRows(players[player.opponent]);
+            if(players[player.opponent].rows <= 3) gameOver(players[player.opponent]);
+            else reduceRows(players[player.opponent]);
         }
         if(player.guesses < player.rows) return;
         outOfGuesses(player);
