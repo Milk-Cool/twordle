@@ -43,11 +43,13 @@ const generatePlayer = (ws: WebSocket) => ({
 const reduceRows = (player: Player) => {
     player.rows--;
     player.ws.send(`501 Rows reduced (${player.rows})`);
+    if(player.opponent !== null) players[player.opponent]?.ws?.send?.(`206 Opponent rows reduced (${player.rows})`);
     if(player.guesses < player.rows) return;
     outOfGuesses(player);
 };
 const outOfGuesses = (player: Player) => {
     player.ws.send("402 Out of guesses");
+    if(player.opponent !== null) players[player.opponent]?.ws?.send?.("205 Opponent out of guesses");
     player.guesses = 0;
     if(player.rows <= 3) return gameOver(player);
     reduceRows(player);
@@ -63,10 +65,15 @@ const gameOver = (player: Player) => {
     delete players[player.opponent];
 };
 
-const wss = new WebSocketServer({ server });
+// just in case
+process.on("uncaughtException", console.error);
+process.on("unhandledRejection", console.error);
+
+const wss = new WebSocketServer({ noServer: true });
 wss.on("connection", ws => {
     ws.on("error", console.error);
 
+    console.log("New player!");
     ws.send("299 Welcome to twordle");
 
     const player = generatePlayer(ws);
@@ -82,7 +89,7 @@ wss.on("connection", ws => {
         delete players[index];
     });
 
-    let opponentIndex = players.findIndex((x, i) => x.opponent === null && i !== index);
+    let opponentIndex = players.findIndex((x, i) => x && x.opponent === null && i !== index);
     if(opponentIndex !== -1) {
         player.opponent = opponentIndex;
         players[opponentIndex].opponent = index;
@@ -113,7 +120,8 @@ wss.on("connection", ws => {
             if(player.word.includes(x)) return "y";
             return "-";
         }).join("");
-        ws.send("200 " + mask);
+        ws.send("200 (" + mask + ")");
+        players[player.opponent]?.ws?.send?.("204 Opponent's word+mask (" + str.toUpperCase() + ";" + mask + ")");
         if(mask === "ggggg") {
             player.guesses = 0;
             if(players[player.opponent].rows <= 3) gameOver(players[player.opponent]);
@@ -122,4 +130,9 @@ wss.on("connection", ws => {
         if(player.guesses < player.rows) return;
         outOfGuesses(player);
     });
+});
+
+server.on("upgrade", (req, socket, head) => {
+    if(req.headers["sec-websocket-protocol"] === "vite-hmr") return;
+    wss.handleUpgrade(req, socket, head, ws => wss.emit("connection", ws, req));
 });

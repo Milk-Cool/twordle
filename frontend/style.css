@@ -1,0 +1,59 @@
+* {
+    font-family: sans-serif;
+}
+
+#field {
+    max-width: 90vw;
+    width: 66em; /* hack */
+    position: fixed;
+    top: 50vh;
+    left: 50vw;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+#field > #game {
+    display: flex;
+    flex-direction: row;
+}
+#field table td {
+    border: 1px solid gray;
+    width: 100px;
+    height: 100px;
+    font-size: xx-large;
+}
+#field table td.disabled, #field table td.gray {
+    background: #ccc;
+}
+#field table td.yellow {
+    background: #ff0;
+}
+#field table td.green {
+    background: #0d0;
+}
+#field table td.disabled::before {
+    content: "X";
+}
+#spacer {
+    width: 3em;
+}
+
+#messageh {
+    color: gray;
+    font-style: italic;
+}
+
+@keyframes shake {
+    0%, 100% {
+        translate: 0 0;
+    }
+    10%, 30%, 50%, 70% {
+        translate: -4px 0;
+    }
+    20%, 40%, 60%, 80% {
+        translate: 4px 0;
+    }
+}
+#field.shake {
+    animation-name: shake;
+    animation-duration: 0.4s;
+}
