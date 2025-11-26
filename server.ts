@@ -14,7 +14,7 @@ const randomWord = () => {
     return word.toUpperCase();
 };
 
-const PORT = 12701;
+const PORT = 12702;
 const app = express();
 
 const server = ViteExpress.listen(app, PORT, () => {
