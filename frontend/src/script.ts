@@ -56,6 +56,16 @@ const codes: Record<number, (additionalData?: string) => (void | Promise<void>)>
         ridx++;
         idx = 0;
         word = "";
+        if(data === "ggggg") setTimeout(() => {
+            ridx = 0;
+            for(let y = 0; y < 6; y++)
+                for(let x = 0; x < 5; x++) {
+                    (document.querySelector(`#fieldL-x${x}y${y}`) as HTMLTableCellElement).classList.remove("gray", "yellow", "green", "disabled");
+                    if(y >= orows)
+                        (document.querySelector(`#fieldL-x${x}y${y}`) as HTMLTableCellElement).classList.add("disabled");
+                    (document.querySelector(`#fieldL-x${x}y${y}`) as HTMLTableCellElement).innerText = "";
+                }
+            }, 200);
     },
     201: msgcb("searching for opponent..."),
     202: () => {
