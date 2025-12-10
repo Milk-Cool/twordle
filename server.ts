@@ -11,7 +11,7 @@ const randomWord = () => {
     do {
         word = words[Math.floor(Math.random() * words.length)];
     } while(Array.from(new Set(word.split(""))).length !== WORD_LENGTH);
-    console.log(word.toUpperCase()); // COMMENT OUT FOR PROD
+    // console.log(word.toUpperCase()); // COMMENT OUT FOR PROD
     return word.toUpperCase();
 };
 
