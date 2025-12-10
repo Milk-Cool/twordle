@@ -14,7 +14,7 @@ const msgcb = (text: string, error: boolean = false) => () => {
     if(error) {
         const field = document.querySelector("#field") as HTMLDivElement;
         field.classList.remove("shake");
-        field.classList.add("shake");
+        setTimeout(() => field.classList.add("shake"), 5);
     }
     (document.querySelector("#message") as HTMLSpanElement).innerText = text;
 }
@@ -61,7 +61,7 @@ const codes: Record<number, (additionalData?: string) => (void | Promise<void>)>
             for(let y = 0; y < 6; y++)
                 for(let x = 0; x < 5; x++) {
                     (document.querySelector(`#fieldL-x${x}y${y}`) as HTMLTableCellElement).classList.remove("gray", "yellow", "green", "disabled");
-                    if(y >= orows)
+                    if(y >= rows)
                         (document.querySelector(`#fieldL-x${x}y${y}`) as HTMLTableCellElement).classList.add("disabled");
                     (document.querySelector(`#fieldL-x${x}y${y}`) as HTMLTableCellElement).innerText = "";
                 }
@@ -108,6 +108,7 @@ const codes: Record<number, (additionalData?: string) => (void | Promise<void>)>
         orows = parseInt(data);
         updateRows(orows, "fieldR");
     },
+    207: () => codes[205](),
     400: msgcb("invalid word length", true),
     401: msgcb("not a real word", true),
     402: () => {

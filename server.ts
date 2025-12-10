@@ -11,6 +11,7 @@ const randomWord = () => {
     do {
         word = words[Math.floor(Math.random() * words.length)];
     } while(Array.from(new Set(word.split(""))).length !== WORD_LENGTH);
+    console.log(word.toUpperCase()); // COMMENT OUT FOR PROD
     return word.toUpperCase();
 };
 
@@ -124,6 +125,8 @@ wss.on("connection", ws => {
         players[player.opponent]?.ws?.send?.("204 Opponent's word+mask (" + str.toUpperCase() + ";" + mask + ")");
         if(mask === "ggggg") {
             player.guesses = 0;
+            player.word = randomWord();
+            players[player.opponent]?.ws?.send?.("207 Opponent guessed");
             if(players[player.opponent].rows <= 3) gameOver(players[player.opponent]);
             else reduceRows(players[player.opponent]);
         }
